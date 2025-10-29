@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendar Category Viewer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .user-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+        }
+        
+        .user-btn {
+            background: white;
+            color: #667eea;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.1em;
+            font-weight: 600;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .user-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+        
+        .user-btn.active {
+            background: #764ba2;
+            color: white;
+        }
+        
+        .schedule-container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            display: none;
+        }
+        
+        .schedule-container.visible {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .schedule-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .schedule-header h2 {
+            color: #333;
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+        
+        .date-range {
+            color: #666;
+            font-size: 0.95em;
+        }
+        
+        .categories {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+        
+        .category {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            border-left: 5px solid;
+        }
+        
+        .category.class {
+            border-left-color: #3b82f6;
+        }
+        
+        .category.meetings {
+            border-left-color: #10b981;
+        }
+        
+        .category.social {
+            border-left-color: #f59e0b;
+        }
+        
+        .category.other {
+            border-left-color: #6b7280;
+        }
+        
+        .category h3 {
+            font-size: 1.4em;
+            margin-bottom: 15px;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .category-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2em;
+        }
+        
+        .class .category-icon {
+            background: #dbeafe;
+        }
+        
+        .meetings .category-icon {
+            background: #d1fae5;
+        }
+        
+        .social .category-icon {
+            background: #fed7aa;
+        }
+        
+        .other .category-icon {
+            background: #e5e7eb;
+        }
+        
+        .event-count {
+            font-size: 2em;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .event-list {
+            list-style: none;
+            margin-top: 15px;
+        }
+        
+        .event-item {
+            padding: 10px 0;
+            border-bottom: 1px solid #e5e7eb;
+            color: #666;
+            font-size: 0.95em;
+        }
+        
+        .event-item:last-child {
+            border-bottom: none;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .auth-section {
+            background: #fff9e6;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .auth-btn {
+            background: #4285f4;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1em;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        
+        .auth-btn:hover {
+            background: #357ae8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📅 Calendar Category Viewer</h1>
+            <p>View your schedule organized by categories</p>
+        </div>
+        
+        <div class="auth-section" id="authSection">
+            <h3>Connect Your Google Calendar</h3>
+            <p style="margin: 15px 0; color: #666;">Click below to authorize access to your calendar</p>
+            <button class="auth-btn" onclick="handleAuthClick()">Sign in with Google</button>
+            <button class="auth-btn" style="background: #666;" onclick="handleSignoutClick()">Sign Out</button>
+        </div>
+        
+        <div class="user-buttons" id="userButtons" style="display: none;">
+            <button class="user-btn" onclick="showSchedule('user1')">Your Schedule</button>
+            <button class="user-btn" onclick="showSchedule('user2')">Friend's Schedule</button>
+        </div>
+        
+        <div class="schedule-container" id="scheduleUser1"></div>
+        <div class="schedule-container" id="scheduleUser2"></div>
+    </div>
+
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script>
+        // CONFIGURATION - REPLACE THESE VALUES
+        const CLIENT_ID = 'YOUR_CLIENT_ID_HERE.apps.googleusercontent.com';
+        const API_KEY = 'YOUR_API_KEY_HERE';
+        const SCOPES = 'https://www.googleapis.com/auth/calendar.readonly';
+        
+        let tokenClient;
+        let gapiInited = false;
+        let gisInited = false;
+        let currentUser = null;
+        let accessToken = null;
+        
+        // User configurations
+        const users = {
+            user1: {
+                name: 'Your',
+                calendarId: 'primary'
+            },
+            user2: {
+                name: "Friend's",
+                calendarId: 'primary'
+            }
+        };
+        
+        // Initialize Google API
+        function gapiLoaded() {
+            gapi.load('client', initializeGapiClient);
+        }
+        
+        async function initializeGapiClient() {
+            await gapi.client.init({
+                apiKey: API_KEY,
+                discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest'],
+            });
+            gapiInited = true;
+        }
+        
+        function gisLoaded() {
+            tokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: CLIENT_ID,
+                scope: SCOPES,
+                callback: '',
+            });
+            gisInited = true;
+        }
+        
+        function handleAuthClick() {
+            tokenClient.callback = async (resp) => {
+                if (resp.error !== undefined) {
+                    throw (resp);
+                }
+                accessToken = gapi.client.getToken().access_token;
+                document.getElementById('authSection').style.display = 'none';
+                document.getElementById('userButtons').style.display = 'flex';
+            };
+            
+            if (gapi.client.getToken() === null) {
+                tokenClient.requestAccessToken({prompt: 'consent'});
+            } else {
+                tokenClient.requestAccessToken({prompt: ''});
+            }
+        }
+        
+        function handleSignoutClick() {
+            const token = gapi.client.getToken();
+            if (token !== null) {
+                google.accounts.oauth2.revoke(token.access_token);
+                gapi.client.setToken('');
+                document.getElementById('authSection').style.display = 'block';
+                document.getElementById('userButtons').style.display = 'none';
+                document.getElementById('scheduleUser1').classList.remove('visible');
+                document.getElementById('scheduleUser2').classList.remove('visible');
+            }
+        }
+        
+        async function showSchedule(userId) {
+            currentUser = userId;
+            
+            // Update button states
+            document.querySelectorAll('.user-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Hide all schedules
+            document.querySelectorAll('.schedule-container').forEach(sc => {
+                sc.classList.remove('visible');
+            });
+            
+            const container = document.getElementById(`schedule${userId.charAt(0).toUpperCase() + userId.slice(1)}`);
+            container.innerHTML = '<div class="loading">Loading schedule...</div>';
+            container.classList.add('visible');
+            
+            try {
+                const events = await fetchCalendarEvents(users[userId].calendarId);
+                displaySchedule(container, events, users[userId].name);
+            } catch (error) {
+                container.innerHTML = `<div class="error">Error loading calendar: ${error.message}</div>`;
+            }
+        }
+        
+        async function fetchCalendarEvents(calendarId) {
+            const now = new Date();
+            const endDate = new Date();
+            endDate.setDate(endDate.getDate() + 7); // Next 7 days
+            
+            const response = await gapi.client.calendar.events.list({
+                'calendarId': calendarId,
+                'timeMin': now.toISOString(),
+                'timeMax': endDate.toISOString(),
+                'showDeleted': false,
+                'singleEvents': true,
+                'orderBy': 'startTime'
+            });
+            
+            return response.result.items || [];
+        }
+        
+        function categorizeEvent(event) {
+            const title = (event.summary || '').toLowerCase();
+            
+            if (title.includes('class') || title.includes('lecture') || title.includes('course')) {
+                return 'class';
+            } else if (title.includes('meeting') || title.includes('call') || title.includes('sync')) {
+                return 'meetings';
+            } else if (title.includes('lunch') || title.includes('dinner') || title.includes('coffee') || 
+                       title.includes('party') || title.includes('hangout')) {
+                return 'social';
+            }
+            return 'other';
+        }
+        
+        function displaySchedule(container, events, userName) {
+            const categories = {
+                class: { name: 'Classes', icon: '📚', events: [] },
+                meetings: { name: 'Meetings', icon: '💼', events: [] },
+                social: { name: 'Social', icon: '🎉', events: [] },
+                other: { name: 'Other', icon: '📋', events: [] }
+            };
+            
+            events.forEach(event => {
+                const category = categorizeEvent(event);
+                const startTime = event.start.dateTime || event.start.date;
+                const date = new Date(startTime);
+                categories[category].events.push({
+                    title: event.summary || 'Untitled',
+                    time: date.toLocaleString('en-US', { 
+                        weekday: 'short', 
+                        month: 'short', 
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    })
+                });
+            });
+            
+            const now = new Date();
+            const endDate = new Date();
+            endDate.setDate(endDate.getDate() + 7);
+            
+            let html = `
+                <div class="schedule-header">
+                    <h2>${userName} Schedule</h2>
+                    <p class="date-range">${now.toLocaleDateString()} - ${endDate.toLocaleDateString()}</p>
+                </div>
+                <div class="categories">
+            `;
+            
+            for (const [key, cat] of Object.entries(categories)) {
+                html += `
+                    <div class="category ${key}">
+                        <h3>
+                            <span class="category-icon">${cat.icon}</span>
+                            ${cat.name}
+                        </h3>
+                        <div class="event-count">${cat.events.length}</div>
+                        <p style="color: #666; font-size: 0.9em;">events scheduled</p>
+                        ${cat.events.length > 0 ? `
+                            <ul class="event-list">
+                                ${cat.events.map(e => `<li class="event-item">${e.time}</li>`).join('')}
+                            </ul>
+                        ` : ''}
+                    </div>
+                `;
+            }
+            
+            html += '</div>';
+            container.innerHTML = html;
+        }
+        
+        // Load Google API
+        window.gapiLoaded = gapiLoaded;
+        window.gisLoaded = gisLoaded;
+    </script>
+    <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
+</body>
+</html>
